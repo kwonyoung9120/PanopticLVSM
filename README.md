@@ -10,7 +10,7 @@
 
 ## Overview
 
-<p align="center"> <img src="teaser.gif" width="88%"> </p>
+<p align="center"> <img src="docs/teaser.gif" width="88%"> </p>
 
 A frozen large view synthesis model propagates input-view panoptic labels to novel views: labels are encoded as binary channels, passed through the same network that renders RGB, and decoded on the target view. 
 

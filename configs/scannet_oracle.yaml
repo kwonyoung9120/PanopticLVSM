@@ -1,0 +1,23 @@
+# ScanNet evaluation with ground-truth input-view labels.
+
+data:
+  root: ""                    # empty -> $SCANNET_ROOT
+  pairs: ALL
+  image_size: 256
+  n_context_views: 2
+  max_target_views: 2
+
+source_seg:
+  name: oracle
+
+codec:
+  name: binary
+  bits: 3
+  tau: 0.1
+  assign: area
+  multipass: false
+
+nvs:
+  ckpt: ckpts/uplvsm_x224.pt
+
+device: cuda:0

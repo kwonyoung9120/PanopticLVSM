@@ -1,0 +1,46 @@
+# PanopticLVSM conda environment.
+#   conda env create -f environment.yml
+#   conda activate panopticlvsm
+#   bash scripts/install_deps.sh
+# Tested with Python 3.11 + PyTorch 2.4.1 (CUDA 12.4 wheels), numpy 2.x, transformers 5.5.
+# For another CUDA version, change the PyTorch index URL (and keep xformers matched to PyTorch).
+
+name: panopticlvsm
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+  - pip
+  - git
+
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu124
+      - torch==2.4.1
+      - torchvision==0.19.1
+      - xformers==0.0.28.post1   # matches PyTorch 2.4.1
+      - numpy
+      - pillow
+      - scipy
+      - pyyaml
+      - opencv-python
+      - sentencepiece
+      - transformers>=5.2,<5.6   # 5.6+ requires PyTorch >= 2.5
+      - wandb>=0.25,<1
+      - roma>=1.5
+      - einops>=0.8
+      - easydict
+      - omegaconf
+      - huggingface_hub
+      - rich
+      - tqdm
+      - gradio
+      - imageio
+      - imageio-ffmpeg
+      - jaxtyping
+      - lpips
+      - scikit-image
+      - torchmetrics
+      - plyfile
+      - hydra-core
+      - iopath

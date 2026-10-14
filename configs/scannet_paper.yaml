@@ -1,0 +1,24 @@
+# Paper protocol: trained NVS and shared decoder with two context views.
+
+data:
+  root: ""                    # empty -> $SCANNET_ROOT
+  pairs: ALL
+  image_size: 256
+  n_context_views: 2
+  max_target_views: 4
+
+source_seg:
+  name: shared_query
+  ckpt: ckpts/panopticlvsm_scannet.pt
+
+codec:
+  name: binary
+  bits: 3
+  tau: 0.2
+  assign: encounter
+
+nvs:
+  ckpt: ckpts/panopticlvsm_scannet.pt
+  ckpt_prefix: nvs.
+
+device: cuda:0

@@ -1,0 +1,29 @@
+# ---- data, weights, outputs -------------------------------------------------
+data/
+ckpts/
+cache/
+runs/
+demo_out/
+*.pkl
+*.pt
+*.pth
+*.ckpt
+*.log
+
+# ---- papers and scratch notes ----------------------------------------------
+*.pdf
+
+# ---- editor / OS / python noise -------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store

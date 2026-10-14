@@ -1,0 +1,23 @@
+diff --git a/src/panst3r/panst3r.py b/src/panst3r/panst3r.py
+index 7f603f7..11ab776 100644
+--- a/src/panst3r/panst3r.py
++++ b/src/panst3r/panst3r.py
+@@ -7,8 +7,7 @@ import numpy as np
+ from tqdm import tqdm
+ 
+ from must3r.model import *
+-from must3r.demo.inference import farthest_point_sampling
+-from panst3r.engine.retrieval import PanSt3RRetriever
++from must3r.retrieval.graph import farthest_point_sampling
+ from must3r.engine.inference import inference_multi_ar, stack_views
+ 
+ from panst3r.model import *
+@@ -89,7 +88,7 @@ class PanSt3R(nn.Module):
+         """Gets keyframes through retrieval"""
+ 
+         assert self.retrieval is not None, "Retrieval model not provided."
+-        assert PanSt3RRetriever is not None, "Retrieval not available. Install asmk to support retrieval."
++        from panst3r.engine.retrieval import PanSt3RRetriever
+ 
+         if not isinstance(must3r_x, list):
+             must3r_x = [xi.unsqueeze(0) for xi in must3r_x.squeeze(0)]

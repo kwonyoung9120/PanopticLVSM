@@ -1,0 +1,94 @@
+# Shared query decoder training: joint NVS + panoptic objective.
+model:
+  class_name: train.lvsm_seg.UnposedLVSMSeg
+
+  image_tokenizer:
+    image_size: 224
+    patch_size: 14
+
+  target_pose_tokenizer:
+    image_size: 224
+    patch_size: 14
+
+  transformer:
+    d: 768
+    d_head: 64
+    encoder_n_layer: 6
+    estimator_n_layer: 4
+    decoder_n_layer: 14
+    special_init: true
+    depth_init: true
+    use_qk_norm: true
+    n_latent_vectors: 1024
+
+segmentation:
+  load_panoptic: true
+  seg_layer_indices: [2, 5, 8, 11]   # DINOv2 intermediate blocks
+  interaction_indexes: [2, 5, 8, 11]
+  adapter_num_block: 12
+  num_labels: 20         # ScanNet classes
+  num_queries: 100
+  nvs_loss_weight: 1.0
+  seg_loss_weight: 1.0
+  nvs_lr_scale: 1.0     # Relative NVS learning rate
+  seg_lr_scale: 1.0     # Relative segmentation learning rate
+  pretrained_seg_ckpt: ckpts/mask2former_coco_panoptic_dinov2_224.pt
+
+unposed:
+  pose_enc_type: "absT_quaR"
+  dino_qknorm: true
+
+training:
+  amp_dtype: bf16
+  batch_size_per_gpu: 8
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip_norm: 1.0
+  allowed_gradnorm_factor: 5
+  scene_scale_factor: 1.35
+  checkpoint_dir: runs/train_source_seg
+  dataset_name: train.dataset.Dataset
+  scannet_root: ""            # empty -> $SCANNET_ROOT
+  grad_accum_steps: 1
+  grad_checkpoint_every: 1
+
+  l2_loss_weight: 1.0
+  lpips_loss_weight: 0.0
+  perceptual_loss_weight: 0.5
+
+  lr: 0.0001
+  eta_min: 0.00001
+  scheduler_type: cosine_annealing
+  train_steps: 1100
+
+  num_input_views: 2
+  num_target_views: 6
+  num_views: 8
+  num_threads: 8
+  num_workers: 4
+  prefetch_factor: 16
+
+  target_has_input: true
+  use_amp: true
+  use_tf32: true
+  view_selector:
+    max_frame_dist: 100
+    min_frame_dist: 10
+
+  print_every: 11
+  wandb_log_every: 11
+  eval_every: 1100
+  vis_every: 22
+  checkpoint_every: 110
+
+  resume_ckpt: ckpts/uplvsm_x224.pt
+  reset_training_state: true
+  reset_lr_scheduler: true
+
+  wandb_exp_name: source_seg
+  wandb_project: panopticlvsm
+  warmup: 22
+  weight_decay: 0.05
+
+inference:
+  if_inference: false

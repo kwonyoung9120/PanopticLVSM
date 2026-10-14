@@ -1,0 +1,28 @@
+# ScanNet evaluation with PanSt3R input-view segmentation.
+
+data:
+  root: ""                    # empty -> $SCANNET_ROOT
+  pairs: ALL                  # 'ALL', or a subset file such as splits/subset200.json
+  image_size: 256
+  n_context_views: 2
+  max_target_views: 2
+
+source_seg:
+  name: panst3r               # panst3r | oracle
+  ckpt: ckpts/panst3r_v2_512_5ds.pth
+  vocab: scannet20            # scannet20 | scannetpp100 | scannet20_rich2
+  inference_size: 256
+  remap_unknown: otherfurniture
+  postprocess: standard_v2
+
+codec:
+  name: binary
+  bits: 3
+  tau: 0.1
+  assign: area
+  multipass: false
+
+nvs:
+  ckpt: ckpts/uplvsm_x224.pt
+
+device: cuda:0

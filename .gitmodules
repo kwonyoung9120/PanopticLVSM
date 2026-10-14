@@ -1,0 +1,15 @@
+[submodule "nvs_models/Less3Depend"]
+	path = nvs_models/Less3Depend
+	url = https://github.com/ou524u/Less3Depend.git
+[submodule "seg_models/panst3r"]
+	path = seg_models/panst3r
+	url = https://github.com/naver/panst3r.git
+[submodule "nvs_models/LVSM"]
+	path = nvs_models/LVSM
+	url = https://github.com/Haian-Jin/LVSM
+[submodule "seg_models/must3r"]
+	path = seg_models/must3r
+	url = https://github.com/naver/must3r
+[submodule "seg_models/sam2"]
+	path = seg_models/sam2
+	url = https://github.com/facebookresearch/sam2

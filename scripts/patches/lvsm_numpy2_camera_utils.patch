@@ -1,0 +1,13 @@
+diff --git a/utils/camera_utils.py b/utils/camera_utils.py
+index 85ceac5..254410e 100644
+--- a/utils/camera_utils.py
++++ b/utils/camera_utils.py
+@@ -54,7 +54,7 @@ def quaternion_from_matrix(matrix: NDArray, isprecise: bool = False) -> np.ndarr
+         matrix: rotation matrix to obtain quaternion
+         isprecise: if True, input matrix is assumed to be precise rotation matrix and a faster algorithm is used.
+     """
+-    M = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
++    M = np.asarray(matrix, dtype=np.float64)[:4, :4]  # numpy>=2: copy=False would raise
+     if isprecise:
+         q = np.empty((4,))
+         t = np.trace(M)

@@ -1,0 +1,26 @@
+diff --git a/src/model/loss.py b/src/model/loss.py
+index bee14ab..e463018 100644
+--- a/src/model/loss.py
++++ b/src/model/loss.py
+@@ -31,7 +31,7 @@ class PerceptualLoss(nn.Module):
+     
+     def _load_weights(self):
+         """Load pre-trained VGG weights. """
+-        weight_file = Path("./datasets/pretrained/imagenet-vgg-verydeep-19.mat")
++        weight_file = Path(os.environ.get("CKPTS_DIR", "ckpts")) / "imagenet-vgg-verydeep-19.mat"
+         weight_file.parent.mkdir(exist_ok=True, parents=True)
+         
+         if torch.distributed.get_rank() == 0:
+diff --git a/src/model/ptlvsm.py b/src/model/ptlvsm.py
+index 1a464b9..807c847 100644
+--- a/src/model/ptlvsm.py
++++ b/src/model/ptlvsm.py
+@@ -28,7 +28,7 @@ class dino_tokenizer(nn.Module):
+             init_values=1.0,
+             qk_norm=dino_qknorm, # enable qknorm
+         )
+-        dino_file = Path("./datasets/pretrained/dinov2_vitb14_reg4_pretrain.pth")
++        dino_file = Path(os.environ.get("CKPTS_DIR", "ckpts")) / "dinov2_vitb14_reg4_pretrain.pth"
+         dino_file.parent.mkdir(exist_ok=True, parents=True)
+         if torch.distributed.get_rank() == 0:
+             # Download weights if needed

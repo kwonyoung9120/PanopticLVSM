@@ -1,0 +1,25 @@
+# COCO panoptic pretraining of the source-view query decoder (frozen DINOv2 features).
+
+data:
+  root: ${oc.env:COCO_ROOT,data/coco}   # holds train2017/, panoptic_train2017/, annotations/
+  image_size: 224
+  scale: [0.8, 1.6]                     # short-side scale range before the random crop
+
+segmentation:
+  seg_layer_indices: [2, 5, 8, 11]
+  interaction_indexes: [2, 5, 8, 11]
+  adapter_num_block: 12
+  num_labels: 133                       # COCO panoptic classes
+  num_queries: 100
+
+training:
+  out_dir: runs/pretrain_coco_seg
+  batch_size_per_gpu: 16
+  num_workers: 8
+  lr: 0.0001
+  weight_decay: 0.05
+  grad_clip_norm: 1.0
+  warmup: 500
+  train_steps: 30000
+  print_every: 50
+  checkpoint_every: 2000

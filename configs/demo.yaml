@@ -1,0 +1,14 @@
+# Gradio demo: posed LVSM renders the camera path between two views and propagates
+# their segmentation along it.
+
+nvs:
+  src: nvs_models/LVSM
+  config: configs/LVSM_scene_decoder_only.yaml
+  ckpt: ckpts/scene_decoder_only_256.pt
+
+codec:
+  bits: 3
+  tau: 0.1
+  assign: area
+
+device: cuda:0

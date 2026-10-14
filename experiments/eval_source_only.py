@@ -53,7 +53,7 @@ def main():
     shard_idx, num_shards = args.shard_idx, args.num_shards
 
     torch.set_grad_enabled(False)
-    src_seg = make_source_seg(cfg.source_seg, device=cfg.device)
+    src_seg = make_source_seg(cfg.source_seg, device=cfg.device, output_size=int(cfg.data.image_size))
 
     loader = ScanNetValPairLoader(
         cfg.data.pairs,

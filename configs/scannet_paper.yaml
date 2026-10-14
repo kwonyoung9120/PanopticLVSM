@@ -3,7 +3,7 @@
 data:
   root: ""                    # empty -> $SCANNET_ROOT
   pairs: ALL
-  image_size: 256
+  image_size: 224
   n_context_views: 2
   max_target_views: 4
 

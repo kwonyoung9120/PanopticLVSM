@@ -104,7 +104,7 @@ Five ScanNet examples with ground-truth segmentation and cameras are in `docs/ex
 
 ## Acknowledgements
 
-This codebase builds on the following repositories:
+We thank the authors of the following repositories, on which this codebase builds:
 - [Less3Depend](https://github.com/ou524u/Less3Depend)
 - [SIU3R](https://github.com/WU-CVGL/SIU3R)
 - [PanSt3R](https://github.com/naver/panst3r)

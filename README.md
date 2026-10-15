@@ -73,7 +73,7 @@ torchrun --nproc_per_node=4 experiments/train_source_seg.py --config configs/tra
 ## Evaluation
 
 ```bash
-# Paper protocol: trained model, 2 input / 4 target views, tau 0.2 (DEVICES=0,1,2,3 to pick GPUs)
+# Paper protocol (SIU3R accounting): trained model, 2 input views, all target views of val_pair.json, tau 0.2 (DEVICES=0,1,2,3 to pick GPUs)
 bash scripts/run_full_val_4gpu.sh configs/scannet_paper.yaml
 
 # Training-free: PanSt3R source segmentation

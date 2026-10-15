@@ -12,7 +12,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from metrics import PQAccumulator
+from metrics import PQAccumulator, miou_from_counts
 
 
 def _pq_from_states(states: list[dict]) -> dict:
@@ -24,8 +24,7 @@ def _pq_from_states(states: list[dict]) -> dict:
 
 
 def _miou(inter: np.ndarray, union: np.ndarray) -> float:
-    ious = [inter[c] / union[c] for c in range(1, len(inter)) if union[c] > 0]
-    return float(np.mean(ious)) if ious else 0.0
+    return miou_from_counts(inter, union)
 
 
 def main():
@@ -41,6 +40,7 @@ def main():
     n_pairs = sum(d["n_pairs"] for d in shards)
     psnr = sum(d["psnr_sum"] for d in shards) / max(1, sum(d["psnr_n"] for d in shards))
     ssim = sum(d["ssim_sum"] for d in shards) / max(1, sum(d["ssim_n"] for d in shards))
+    lpips = sum(d.get("lpips_sum", 0.0) for d in shards) / max(1, sum(d.get("lpips_n", 0) for d in shards))
     total_px = sum(d["total_pixels"] for d in shards)
     uncertain = sum(d["uncertain_pixels"] for d in shards) / max(1, total_px)
     sec = sum(d["total_time"] for d in shards) / max(1, n_pairs)
@@ -51,7 +51,7 @@ def main():
     print(f"[merge] n_pairs={n_pairs} shards={len(shards)}")
     for k, v in [
         ("PQ_novel", pq["PQ"]), ("SQ_novel", pq["SQ"]), ("RQ_novel", pq["RQ"]),
-        ("mIoU_novel", _miou(inter, union)), ("PSNR_novel", psnr), ("SSIM_novel", ssim),
+        ("mIoU_novel", _miou(inter, union)), ("PSNR_novel", psnr), ("SSIM_novel", ssim), ("LPIPS_novel", lpips),
         ("seconds_per_scene", sec), ("uncertain_frac", uncertain),
         ("PQ_novel_excl", pq_x["PQ"]), ("SQ_novel_excl", pq_x["SQ"]), ("RQ_novel_excl", pq_x["RQ"]),
         ("mIoU_novel_excl", _miou(inter_x, union_x)),

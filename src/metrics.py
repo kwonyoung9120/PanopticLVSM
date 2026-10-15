@@ -1,8 +1,11 @@
 """SIU3R-compatible PQ and mIoU metrics for ScanNet panoptic labels.
 
-PQ is updated per pair after concatenating views along height. Class 0 is
-excluded from mIoU averages, while predictions on void pixels remain false
-positives for the predicted class.
+Follows SIU3R/src/evaluator.py: PQ and mIoU are updated per pair after
+concatenating views along height, and both average over all 20 classes
+(a class absent from the whole split counts as 0). Class 0 is excluded from
+mIoU, while predictions on void pixels remain false positives for the
+predicted class. PSNR/SSIM are computed on 8-bit images, as SIU3R scores
+the PNGs it saves.
 """
 
 from __future__ import annotations
@@ -23,12 +26,23 @@ SCANNET_THING_CLASSES: Set[int] = {
 }
 
 
-# RGB reconstruction metric.
-def psnr(pred: Tensor, gt: Tensor, max_val: float = 1.0) -> float:
-    mse = F.mse_loss(pred.clamp(0, max_val).float(), gt.clamp(0, max_val).float())
+# RGB reconstruction metrics.
+def to_uint8_range(img: Tensor) -> Tensor:
+    """Quantize a [0, 1] image the way torchvision's save_image writes PNGs."""
+    return (img.float().clamp(0, 1) * 255 + 0.5).floor() / 255
+
+
+def psnr(pred: Tensor, gt: Tensor) -> float:
+    """SIU3R PSNR: 8-bit images, data range = max of the target image.
+
+    SIU3R calls torchmetrics PeakSignalNoiseRatio() without a data range, which
+    estimates it per image as max(target) - min(min(target), 0) = max(target).
+    """
+    pred, gt = to_uint8_range(pred), to_uint8_range(gt)
+    mse = F.mse_loss(pred, gt)
     if mse.item() <= 0:
         return float("inf")
-    return 10.0 * torch.log10(torch.tensor(max_val * max_val) / mse).item()
+    return 10.0 * torch.log10(gt.max() ** 2 / mse).item()
 
 
 def pair_concat(views: Tensor) -> Tensor:
@@ -39,6 +53,16 @@ def pair_concat(views: Tensor) -> Tensor:
         raise ValueError(f"expected [V, H, W] or [H, W], got {tuple(views.shape)}")
     V, H, W = views.shape
     return views.reshape(V * H, W).contiguous()
+
+
+def miou_from_counts(inter, union, ignore: int = SCANNET_IGNORE) -> float:
+    """Mean IoU over every class but `ignore`; a class with no pixels counts as 0 (SIU3R)."""
+    ious = [
+        float(inter[c]) / float(union[c]) if float(union[c]) > 0 else 0.0
+        for c in range(len(inter))
+        if c != ignore
+    ]
+    return float(sum(ious) / max(1, len(ious)))
 
 
 class MIoUAccumulator:
@@ -68,15 +92,7 @@ class MIoUAccumulator:
         self.union += tp + fp + fn
 
     def compute(self) -> float:
-        valid_cls = list(range(self.K))
-        if self.ignore in valid_cls:
-            valid_cls.remove(self.ignore)
-        ious = []
-        for c in valid_cls:
-            if self.union[c].item() == 0:
-                continue
-            ious.append(self.inter[c].item() / self.union[c].item())
-        return float(sum(ious) / max(1, len(ious)))
+        return miou_from_counts(self.inter, self.union, self.ignore)
 
     def per_class(self) -> Dict[int, float]:
         """Return {class_index -> IoU} for classes with union > 0 (skip ignore)."""
@@ -151,11 +167,11 @@ class PQAccumulator:
         rq = torch.where(denom > 0, tp / denom.clamp(min=1.0), torch.zeros_like(tp))
         pq = sq * rq
 
-        valid = denom > 0
-        n_valid = int(valid.sum().item())
-        pq_avg = float(pq[valid].mean().item()) if n_valid else 0.0
-        sq_avg = float(sq[valid].mean().item()) if n_valid else 0.0
-        rq_avg = float(rq[valid].mean().item()) if n_valid else 0.0
+        # SIU3R averages the per-class values over all classes.
+        n_valid = int((denom > 0).sum().item())
+        pq_avg = float(pq.mean().item())
+        sq_avg = float(sq.mean().item())
+        rq_avg = float(rq.mean().item())
 
         # torchmetrics registers thing classes before stuff classes.
         cat_id_to_idx = self._pq.cat_id_to_continuous_id
@@ -190,7 +206,8 @@ class PQAccumulator:
 
 
 if __name__ == "__main__":
-    # Perfect predictions should produce PQ and mIoU of 1.
+    # Perfect predictions on 2 of the 20 classes: PQ and mIoU of 2/20 = 0.1,
+    # since absent classes count as 0.
     gt = torch.tensor([[1001, 1001, 2005], [1001, 2005, 2005]], dtype=torch.int64)
     pred = gt.clone()
     pq = PQAccumulator()
@@ -219,4 +236,4 @@ if __name__ == "__main__":
     pred3 = torch.tensor([[3001, 3001, 1001]], dtype=torch.int64)
     miou3 = MIoUAccumulator()
     miou3.update(pred3 // 1000, gt3 // 1000)
-    print(f"void-on-pred: mIoU={miou3.compute():.4f}  (expected 1.0, void excluded)")
+    print(f"void-on-pred: mIoU={miou3.compute():.4f}  (expected 0.05: class 1 IoU 1.0, class 3 IoU 0)")

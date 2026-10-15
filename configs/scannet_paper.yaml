@@ -5,7 +5,7 @@ data:
   pairs: ALL
   image_size: 224
   n_context_views: 2
-  max_target_views: 4
+  max_target_views: null      # SIU3R protocol: all 6 target_ids of val_pair.json (incl. the 2 input views)
 
 source_seg:
   name: shared_query

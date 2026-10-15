@@ -18,7 +18,7 @@ from scannet_loader import ScanNetValPairLoader
 from panoptic_codecs import make_codec
 from source_seg import make_source_seg
 from less3depend_wrapper import Less3Depend
-from metrics import PQAccumulator, MIoUAccumulator, pair_concat, psnr
+from metrics import PQAccumulator, MIoUAccumulator, pair_concat, psnr, to_uint8_range
 
 
 def _load_backbone(device: str, ckpt: str = "", ckpt_prefix: str = ""):
@@ -84,18 +84,21 @@ def main():
     miou_acc_exc = MIoUAccumulator()
     psnr_vals: List[float] = []
     ssim_vals: List[float] = []
+    lpips_vals: List[float] = []
     per_pair_time: List[float] = []
     uncertain_pixels = 0  # total uncertain pixels (across views/pairs)
     total_pixels = 0  # total pixels seen (across views/pairs)
     has_mask_path = codec.name == "binary"
-    # Lazy-load SSIM for ScanNet metrics (matches FFGS protocol).
-    try:
-        from torchmetrics.image import StructuralSimilarityIndexMeasure
+    # SSIM and LPIPS as configured in SIU3R/src/evaluator.py.
+    from torchmetrics.image import (
+        LearnedPerceptualImagePatchSimilarity,
+        StructuralSimilarityIndexMeasure,
+    )
 
-        ssim_fn = StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
-    except Exception as _e:
-        print(f"[ssim] torchmetrics SSIM unavailable: {_e}")
-        ssim_fn = None
+    ssim_fn = StructuralSimilarityIndexMeasure(sync_on_compute=False).to(device)
+    lpips_fn = LearnedPerceptualImagePatchSimilarity(
+        "vgg", normalize=True, sync_on_compute=False
+    ).to(device)
 
     # Evaluate each validation pair.
     for idx in range(n_pairs):
@@ -246,10 +249,10 @@ def main():
         gt_rgb = pair.target_images.to(tgt_rgb.device)
         for v in range(V_tgt):
             psnr_vals.append(psnr(tgt_rgb[0, v], gt_rgb[v]))
-            if ssim_fn is not None:
-                pr = tgt_rgb[0, v].clamp(0, 1).unsqueeze(0).to(device)
-                gr = gt_rgb[v].clamp(0, 1).unsqueeze(0).to(device)
-                ssim_vals.append(float(ssim_fn(pr, gr).item()))
+            pr = to_uint8_range(tgt_rgb[0, v]).unsqueeze(0).to(device)
+            gr = to_uint8_range(gt_rgb[v]).unsqueeze(0).to(device)
+            ssim_vals.append(float(ssim_fn(pr, gr).item()))
+            lpips_vals.append(float(lpips_fn(pr, gr).item()))
         # SIU3R protocol: all target views of a pair are concatenated along
         # height and matched together, once per pair.
         pred_cat, gt_cat = pair_concat(pred_pano), pair_concat(gt_pano)
@@ -276,6 +279,7 @@ def main():
         "mIoU_novel": miou_acc.compute(),
         "PSNR_novel": (sum(psnr_vals) / max(1, len(psnr_vals))),
         "SSIM_novel": (sum(ssim_vals) / max(1, len(ssim_vals))) if ssim_vals else 0.0,
+        "LPIPS_novel": (sum(lpips_vals) / max(1, len(lpips_vals))) if lpips_vals else 0.0,
         "seconds_per_scene": sum(per_pair_time) / max(1, len(per_pair_time)),
         "n_pairs": n_pairs,
         "n_context_views": n_context,
@@ -297,6 +301,7 @@ def main():
         "mIoU_novel",
         "PSNR_novel",
         "SSIM_novel",
+        "LPIPS_novel",
         "seconds_per_scene",
     ]
     if has_mask_path and total_pixels > 0:
@@ -327,6 +332,8 @@ def main():
             "psnr_n": len(psnr_vals),
             "ssim_sum": float(sum(ssim_vals)),
             "ssim_n": len(ssim_vals),
+            "lpips_sum": float(sum(lpips_vals)),
+            "lpips_n": len(lpips_vals),
             "uncertain_pixels": int(uncertain_pixels),
             "total_pixels": int(total_pixels),
             "n_pairs": n_pairs,
